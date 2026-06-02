@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>Web Component: &lt;msc-shared-worker /> - a web component built on top of the native SharedWorker API</title>
+<meta name="description" content="msc-shared-worker is a Web Component built on top of the native SharedWorker API. As a UI-less component, its primary purpose is to allow developers to quickly inject and initialize a SharedWorker simply by configuring its HTML attributes." />
+<script type="module" src="https://unpkg.com/msc-built-in-ai-prompt/mjs/wc-msc-built-in-ai-prompt.js"></script>
+<script type="module" src="https://unpkg.com/msc-dialogs/mjs/wc-msc-dialogs.js"></script>
+<script type="module" src="mjs/wc-msc-shared-worker.js"></script>
+<link rel="stylesheet" href="https://blog.lalacube.com/mei/css/wc-base.css">
+<link rel="stylesheet" href="https://blog.lalacube.com/mei/css/layers/defaults.css">
+<link rel="stylesheet" href="https://blog.lalacube.com/mei/css/layers/buttons.css">
+<style>
+#hd,#ft{display:none;}
+body{position:relative;inline-size:100vw;block-size:100vh;margin:0;}
+
+.wrap {
+  inline-size: 100%;
+  max-inline-size: min(800px, calc(100% - 2em));
+  box-sizing: border-box;
+}
+
+.demo-wrap {
+  --accent-color: var(--dory);
+  --background-color: rgba(220 226 240);
+  
+  /* tip */
+  --tip: 'Drop image here.';
+  --opacity-normal: 0;
+  --opacity-active: 1;
+  --opacity: var(--opacity-normal);
+
+  --pointer-events-normal: none; 
+  --pointer-events-active: auto; 
+  --pointer-events: var(--pointer-events-normal);
+
+  @media (prefers-color-scheme: dark) {
+    --accent-color: 75 168 248;
+    --background-color: rgba(29 34 40);
+  }
+
+  position: relative;
+  inline-size: min(100%, 800px);
+  margin: 8em auto;
+  padding-inline: 1.5em;
+  box-sizing: border-box;
+
+  .button__wrap {
+    --picker-display: none;
+    --warn-display: none;
+
+    &:has(msc-built-in-ai-prompt[data-status=available]) {
+      --picker-display: block;
+    }
+
+    &:has(msc-built-in-ai-prompt[data-status=unsupported]) {
+      --warn-display: flex;
+    }
+
+    position: relative;
+    inline-size: 100%;
+    aspect-ratio: 16/9;
+    background-color: var(--background-color);
+
+    border-radius: 1em;
+    display: grid;
+    place-content: center;
+
+    &.button__wrap--over {
+      --opacity: var(--opacity-active);
+      --pointer-events: var(--pointer-events-active);
+
+      overflow: hidden;
+    }
+
+    &::before {
+      content: var(--tip);
+
+      position: absolute;
+      inset: 0;
+      font-size: 1.125em;
+      color: rgba(255 255 255);
+      background-color: rgba(0 0 0/.75);
+      z-index: 1;
+      pointer-events: var(--pointer-events);
+
+      display: grid;
+      place-content: center;
+
+      opacity: var(--opacity);
+      will-change: opacity;
+      transition: opacity 200ms ease;
+    }
+
+    .product-vision-picker {
+      display: var(--picker-display);
+    }
+
+    .warn-unsupported {
+      color: rgba(var(--accent-color));
+      display: var(--warn-display);
+      align-items: center;
+      gap: .5em;
+
+      &::before {
+        content: '';
+        inline-size: 24px;
+        aspect-ratio: 1/1;
+        display: block;
+        background-color: rgba(var(--accent-color));
+        clip-path: path('M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z');
+      }
+    }
+
+    .trigger-add {
+      --size: 32px;
+      --icon: path('M13 7h-2v4H7v2h4v4h2v-4h4v-2h-4V7zm-1-5C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z');
+      --delta: calc((var(--size) / 3) * -1);
+      --a11y-block-link-border-radius: var(--size);
+      --background-color: rgba(0 0 0/.1);
+
+      @media (prefers-color-scheme: dark) {
+        --background-color: transparent;
+      }
+
+      flex-shrink: 0;
+      font-size: 0;
+      appearance: none;
+      box-shadow: unset;
+      border: unset;
+      background: transparent;
+      -webkit-user-select: none;
+      user-select: none;
+      pointer-events: auto;
+      margin: 0;
+      padding: 0;
+      outline: 0 none;
+
+      position: absolute;
+      inset: var(--delta) var(--delta) auto auto;
+      inline-size: var(--size);
+      aspect-ratio: 1/1;
+      border-radius: var(--size);
+      background-color: var(--background-color);
+      box-sizing: border-box;
+
+      display: grid;
+      place-content: center;
+
+      &::before {
+        content: '';
+        inline-size: 24px;
+        aspect-ratio: 1/1;
+        background-color: rgba(var(--accent-color));
+        clip-path: var(--icon);
+        scale: 1.2;
+      }
+    }
+  }
+}
+
+.product-vision {
+  --duration: .35s;
+  --timing-function: cubic-bezier(.6,-0.06,.76,1.36);
+  --delta: calc((44px / 2) + 1em);
+
+  --opacity-normal: 0;
+  --opacity-active: 1;
+  --opacity: var(--opacity-normal);
+
+  --scale-normal: .01;
+  --scale-active: 1;
+  --scale: var(--scale-normal);
+
+  &.product-vision--show {
+    --opacity: var(--opacity-active);
+    --scale: var(--scale-active);
+  }
+
+  position: absolute;
+  inset: calc(50% + var(--delta)) auto auto 50%;
+  inline-size: max(10em, 50%);
+  inline-size: 240px;
+  translate: -50% 0;
+  box-sizing: border-box;
+  border: 4px solid rgba(255 255 255);
+  transform-origin: 50% calc(var(--delta) * -1);
+  box-shadow: var(--shadow-elevations-2);
+
+  transition:
+    opacity var(--duration) var(--timing-function),
+    scale var(--duration) var(--timing-function);
+  will-change: opacity, scale;
+  opacity: var(--opacity);
+  scale: var(--scale);
+
+  border-radius: 1em;
+  z-index: 2000;
+}
+
+.product-vision-picker {
+  --button-text: '選取商品圖';
+  --button-text: 'Pick product image';
+  --loader-display: none;
+
+  &[inert] {
+    --button-text: '商品圖解析中';
+    --button-text: 'Product image analyzing';
+    --loader-display: block;
+  }
+
+  position: relative;
+  inline-size: fit-content;
+  overflow: hidden;
+
+  input {
+    position: absolute;
+    inset-block-start: -100%;
+  }
+
+  .buttons {
+    &[data-type='secondary1'] {
+      --default-text-color: rgba(var(--accent-color));
+    }
+
+    display: flex;
+    gap: .5em;
+
+    span::before {
+      content: var(--button-text);
+    }
+
+    em {
+      font-size: 0;
+      inline-size: 24px;
+      aspect-ratio: 1 / 1;
+      display: block;
+      background-color: rgba(var(--accent-color));
+      overflow: hidden;
+      clip-path: path('M20 4v12H8V4h12m0-2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8.5 9.67l1.69 2.26 2.48-3.1L19 15H9zM2 6v14c0 1.1.9 2 2 2h14v-2H4V6H2z');
+    }
+  }
+
+  /* https://css-loaders.com/dots/ */
+  .loader {
+    width: 20px;
+    aspect-ratio: 2;
+    --_g: no-repeat radial-gradient(circle closest-side, rgba(var(--accent-color)) 90%, rgba(var(--accent-color)/0));
+    background: 
+      var(--_g) 0%   50%,
+      var(--_g) 50%  50%,
+      var(--_g) 100% 50%;
+    background-size: calc(100%/3) 50%;
+    animation: l3 1s infinite linear;
+    display: var(--loader-display);
+  }
+}
+
+@keyframes l3 {
+  20%{background-position:0%   0%, 50%  50%,100%  50%}
+  40%{background-position:0% 100%, 50%   0%,100%  50%}
+  60%{background-position:0%  50%, 50% 100%,100%   0%}
+  80%{background-position:0%  50%, 50%  50%,100% 100%}
+}
+
+msc-built-in-ai-prompt {
+  --info-text: 'Try AI image analysis';
+  --progress-text: '';
+  --loader-display: none;
+  --button-interactivity: auto;
+
+  &[data-status=downloading][data-progress] {
+    --info-text: 'LLM downloading';
+    --progress-text: attr(data-progress) '%';
+    --loader-display: block;
+    --button-interactivity: inert;
+  }
+
+  .buttons {
+    &[data-type='secondary1'] {
+      --default-text-color: rgba(var(--accent-color));
+    }
+
+    display: flex;
+    gap: .5em;
+    interactivity: var(--button-interactivity);
+
+    span::before {
+      content: var(--info-text);
+    }
+
+    .icon {
+      font-size: 0;
+      inline-size: 24px;
+      aspect-ratio: 1 / 1;
+      display: block;
+      background-color: rgba(var(--accent-color));
+      overflow: hidden;
+      clip-path: path('M19 9l1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25L19 9zm-7.5.5L9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5zM19 15l-1.25 2.75L15 19l2.75 1.25L19 23l1.25-2.75L23 19l-2.75-1.25L19 15z');
+    }
+  }
+
+  .loader {
+    width: 20px;
+    aspect-ratio: 2;
+    --_g: no-repeat radial-gradient(circle closest-side, rgba(var(--accent-color)) 90%, rgba(var(--accent-color)/0));
+    background: 
+      var(--_g) 0%   50%,
+      var(--_g) 50%  50%,
+      var(--_g) 100% 50%;
+    background-size: calc(100%/3) 50%;
+    animation: l3 1s infinite linear;
+    display: var(--loader-display);
+  }
+
+  .loaded-info {
+    display: var(--loader-display);
+
+    &::before {
+      content: var(--progress-text);
+    }
+  }
+}
+
+/* dialog */
+.my-content-wrap {
+  --text-color: rgba(35 42 49);
+  --line-color: rgba(199 205 210);
+  --gap: 12px;
+
+  inline-size: 400px;
+  min-inline-size: 320px;
+
+  @media (prefers-color-scheme: dark) {
+    --text-color: rgba(255 255 255);
+    --line-color: rgba(91 99 106);
+  }
+
+  @media screen and (max-width: 767px) {
+    inline-size: 100%;
+  }
+
+  .my-content-wrap__title {
+    font-size: 1.125em;
+    color: var(--text-color);
+    border-block-end: 1px solid var(--line-color);
+    padding-block-end: var(--gap);
+  }
+
+  .my-content-wrap__vision {
+    --icon-check: path('M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm4.59-12.42L10 14.17l-2.59-2.58L6 13l4 4 8-8z');
+    --icon-fail: path('M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm3.59-13L12 10.59 8.41 7 7 8.41 10.59 12 7 15.59 8.41 17 12 13.41 15.59 17 17 15.59 13.41 12 17 8.41z');
+
+    position: relative;
+    aspect-ratio: 16/10;
+    inline-size: 100%;
+    margin-block: var(--gap);
+
+    img {
+      position: absolute;
+      inset: 0;
+      margin: auto;
+      max-inline-size: 100%;
+      max-block-size: 100%;
+      border-radius: 1em;
+    }
+
+    .my-content-wrap__vision__sign {
+      --gap: 0px;
+      --rate: 8;
+      --size: calc(24px * var(--rate) + var(--gap) * 2);
+
+      --icon: var(--icon-check);
+      --icon-color: rgba(79 169 110);
+
+      position: absolute;
+      inset: 50% auto auto 50%;
+      inline-size: var(--size);
+      aspect-ratio: 1/1;
+      border-radius: var(--size);
+      background-color: rgba(0 0 0/.45);
+      display: grid;
+      place-content: center;
+      transform: translate(-50%, -50%);
+      backdrop-filter: blur(2px);
+
+      &[data-status=pass] {
+        --icon: var(--icon-check);
+        --icon-color: rgba(79 169 110);
+      }
+
+      &[data-status=fail] {
+        --icon: var(--icon-fail);
+        --icon-color: rgba(249 2 86);
+      }
+
+      &::after {
+        content: '';
+        inline-size: 24px;
+        aspect-ratio: 1/1;
+        display: block;
+        background-color: var(--icon-color);
+        clip-path: var(--icon);
+        scale: var(--rate);
+      }
+
+    }
+  }
+
+  .pretty-paragraph {
+    margin-block-start: var(--gap);
+    color: var(--text-color);
+    line-height: 1.3;
+    text-wrap: pretty;
+  }
+}
+
+msc-dialogs {
+  --msc-dialogs-button-active-scale1: .8;
+
+  @media (prefers-color-scheme: dark) {
+    --msc-dialogs-background-color: rgba(30 31 32);
+    --msc-dialogs-backdrop-background-color: rgba(0 0 0/.7);
+    --msc-dialogs-button-icon-color: rgba(130 138 147);
+    --msc-dialogs-button-active-background-color: rgba(51 52 55);
+  }
+
+  @media screen and (max-width: 767px) {
+    --msc-dialogs-padding: 16px;
+
+    --msc-dialogs-button-size: 32;
+    --msc-dialogs-button-inset-inline-end: 12px;
+    --msc-dialogs-button-inset-block-start: 12px;
+  }
+}
+</style>
+</head>
+
+<body class="flex-center">
+<div class="wrap">
+  <div class="demo-wrap">
+    <div class="button__wrap">
+      <!-- msc-built-in-ai-prompt -->
+      <msc-built-in-ai-prompt>
+        <button
+          type="button"
+          class="buttons"
+          data-type="secondary1"
+          data-size="large"
+        >
+          <em class="icon">image</em>
+          <span></span>
+          <div class="loader"></div>
+          <em class="loaded-info"></em>
+        </button>
+      </msc-built-in-ai-prompt>
+      <p class="warn-unsupported">Current browser does't support Built-in AI.</p>
+
+      <!-- picker -->
+      <label class="product-vision-picker">
+        <input type="file" name="product-vision" />
+        <div
+          type="button"
+          class="buttons"
+          data-type="secondary1"
+          data-size="large"
+          role="button"
+        >
+          <em>image</em>
+          <span></span>
+          <div class="loader"></div>
+        </div>
+      </label>
+      <img class="product-vision" src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" />
+    
+      <!-- add tab -->
+      <button
+        type="button"
+        class="trigger-add a11y-block-link"
+        title="add tab"
+      >
+        add tab
+      </button>
+    </div>
+  </div>
+</div>
+
+<msc-shared-worker>
+  <script type="application/json">
+    {
+      "src": "./mjs/worker-experimental.js",
+      "options": {
+        "name": "msc-shared-worker"
+      }
+    }
+  </script>
+</msc-shared-worker>
+
+<msc-dialogs>
+  <div class="my-content-wrap">
+    <p class="my-content-wrap__title">Analysis Result</p>
+    <div class="my-content-wrap__vision">
+      <img src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" alt="prudct image" />
+      <em class="my-content-wrap__vision__sign"></em>
+    </div>
+    <p class="pretty-paragraph"></p>
+  </div>
+</msc-dialogs>
+
+<script type="module">
+class IdleTabAICoordinator {
+  #data;
+  #nodes;
+
+  constructor(worker) {
+    // data
+    this.#data = {
+      controller: '',
+      id: 'tab_' + Math.random().toString(36).substr(2, 9),
+      objectURL: ''
+    };
+
+    // nodes
+    this.#nodes = {
+      worker: document.querySelector('msc-shared-worker'),
+      picker: document.querySelector('.product-vision-picker'),
+      input: document.querySelector('input[name=product-vision]'),
+      vision: document.querySelector('.product-vision'),
+      dialog: document.querySelector('msc-dialogs'),
+      triggerAdd: document.querySelector('.trigger-add')
+    };
+
+    // evts
+    this._handler = this._handler.bind(this);
+    this._onMessage = this._onMessage.bind(this);
+    this._onInput = this._onInput.bind(this);
+    this._onAddTab = this._onAddTab.bind(this);
+  }
+
+  connect() {
+    const { worker, input, triggerAdd } = this.#nodes;
+    this.#data.controller = new AbortController();
+    const signal = this.#data.controller.signal;
+
+    // evts
+    ['msc-shared-worker-message', 'msc-shared-worker-error'].forEach(
+      (event) => {
+        worker.addEventListener(event, this._handler, { signal });
+      }
+    );
+
+    ['beforeunload', 'visibilitychange', 'focus'].forEach(
+      (event) => {
+        window.addEventListener(event, this._handler, { signal });
+      }
+    );
+
+    input.addEventListener('input', this._onInput, { signal });
+    triggerAdd.addEventListener('click', this._onAddTab, { signal });
+
+    // REGISTER
+    worker.postMessage({ type:'REGISTER', id: this.#data.id });
+    this._handler({type: 'visibilitychange'});
+  }
+
+  #disconnect() {
+    this.#data.controller?.abort();
+    this.#nodes.worker.postMessage({ type:'CLOSING', id: this.#data.id });
+  }
+
+  async _onMessage(data) {
+    const { id } = this.#data;
+    const { worker } = this.#nodes;
+    const { type, payload = {} } = data;
+
+    switch (type) {
+      case 'PING': {
+        worker.postMessage({ type:'PONG', id });
+        break;
+      }
+
+      case 'AI_INFERENCE_DISPATCH_BK': {
+        const { type } = payload;
+        let result = '';
+
+        // on-device ai stuff
+        try {
+          const session = await LanguageModel.create();
+          result = await session.prompt('Write me a poem!');
+
+          console.log(result);
+        } catch(err) {}
+
+        worker.postMessage({
+          type:'AI_INFERENCE_FINISH',
+          id,
+          payload: {
+            type,
+            result
+          }
+        });
+        break;
+      }
+
+      case 'AI_INFERENCE_DISPATCH': {
+        const { type, config, params } = payload;
+        let result = {};
+        const ai = document.createElement('msc-built-in-ai-prompt');
+        document.body.appendChild(ai);
+
+        console.log('Current tab is executing on-device AI analysis...');
+
+        try {
+          await ai.create(config);
+          result = await ai.prompt(...params);
+          result = JSON.parse(result);
+          ai.remove();
+        } catch(err) {
+          console.log(err);
+        }
+
+        console.log('On-device AI analysis completed.');
+
+        worker.postMessage({
+          type:'AI_INFERENCE_FINISH',
+          id,
+          payload: {
+            id: payload.id,
+            type,
+            result
+          }
+        });
+        break;
+      }
+
+      case 'AI_RESULT_BROADCAST': {
+        console.log('AI_RESULT_BROADCAST', payload);
+
+        const { picker, vision } = this.#nodes;
+        const {
+          result: {
+            product,
+            isViolating,
+            reason,
+            confidence
+          } = {}
+        } = payload;
+
+        picker.inert = false;
+        vision.classList.toggle('product-vision--show', false);
+
+        // dialog
+        const { dialog } = this.#nodes;
+        const img = dialog.querySelector('.my-content-wrap__vision img');
+        const sign = dialog.querySelector('.my-content-wrap__vision__sign');
+        const intro = dialog.querySelector('.pretty-paragraph');
+
+        img.src = this.#data.objectURL;
+        sign.dataset.status = isViolating ? 'fail' : 'pass';
+        intro.textContent = product;
+
+        dialog.showModal();
+        break;
+      }
+
+      case 'SYSTEM_WORKER_DYING':
+        console.log('SYSTEM_WORKER_DYING');
+        break;
+    }
+  }
+
+  _handler(evt) {
+    const { id } = this.#data;
+    const { worker } = this.#nodes;
+    const { type } = evt;
+
+    switch (type) {
+      case 'beforeunload': {
+        this.#disconnect();
+        break;
+      }
+
+      case 'focus':
+      case 'visibilitychange': {
+        const status = document.visibilityState === 'visible' ? 'active' : 'background';
+        
+        worker.postMessage(
+          {
+            type: 'STATUS_UPDATE',
+            id,
+            payload: { status }
+          }
+        );
+        break;
+      }
+
+      case 'msc-shared-worker-message': {
+        this._onMessage(structuredClone(evt.detail));
+        break;
+      }
+
+      case 'msc-shared-worker-error':
+        console.log('msc-shared-worker-error');
+        break;
+    }
+  }
+
+  _onAddTab() {
+    window.open(window.location.href, '_blank');
+  }
+
+  async _onInput(evt) {
+    const { files } = evt.target;
+
+    if (!files.length) {
+      return;
+    }
+
+    const { picker, worker, vision, input } = this.#nodes;
+    const { id } = this.#data;
+    const blob = files[0];
+
+    const config = {
+      initialPrompts: [
+        {
+          role: 'system',
+          content:
+            'You are a skilled analyst who correlates patterns across multiple images.',
+        },
+      ],
+      expectedInputs: [{ type: 'image' }],
+      multimodal: [
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'text',
+              value: `Here's one image.`,
+            },
+            { type: 'image', value: blob },
+          ],
+        },
+      ]
+    };
+
+    const params = [
+`
+# 角色與任務
+你是一個專業且極度嚴謹的電商平台安全審查專家（E-commerce Trust & Safety AI）。你的核心目標是**精準抓出違反平台政策的違禁品（如電子煙、管制刀械、槍砲）**，同時運用基本商業常識，**絕對避免**將合法的日常服飾鞋包、常規食品、生活家電、玩具模型誤判。
+
+# 當前違禁品定義 (動態輸入)
+\`\`\`json
+[
+  "電子煙",
+  "電子煙油",
+  "LANA",
+  "NRX尼威",
+  "刀械",
+  "槍砲"
+]
+\`\`\`
+*(預設基準：若包含 "電子煙"、"電子煙油"、"LANA"、"NRX尼威"、"刀械"、"槍砲" 等，請嚴格依據傳入之定義執行)*
+
+---
+
+# 核心審查原則（嚴格依此順序執行，違者重罰）
+
+## 【第 0 步：全宇宙最高優先級 - 絕對合法白名單（直接放行防線）】
+當圖片一進來，你必須先檢查是否屬於以下品類。**只要符合，必須直接判定為安全（isViolating: false, confidence: 0.0），並立刻強制結束審查，絕對不允許比對後方的違禁品特徵與規則 B！**
+
+1. **常規生活與美髮家電類**：
+   - 包含**「Dyson 吹風機（不論是中空圓筒、T字型、或帶有任何彎曲狀/長條狀的吹嘴配件）」**、捲髮棒、電動牙刷、吸塵器。
+   - **【鋼鐵律令】**：Dyson 吹風機的各式造型吹嘴（包含防飛翹的彎曲吹嘴）與粗大電源線，是標準的家電配件。**嚴禁將吹風機的任何配件、出風口或幾何結構誤判為電子煙的吸嘴！**
+2. **服飾、鞋履與時尚配件類**：
+   - 包含高跟鞋、平底鞋、樂福鞋、衣服、包包。鞋面上的金屬扣裝飾嚴禁誤判為吸嘴或刀械。
+3. **常規 3C 電子與遊戲主機**：
+   - 標準的電視遊樂器（如 PS5 Pro、Xbox）、顯示卡、路由器。其身上的散熱格柵與線條嚴禁誤判為刀械或槍砲。
+4. **日常食品與兒童玩具類**：
+   - 食用油（橄欖油瓶）、醬油瓶、哥吉拉等怪獸模型（其背刺與尖牙嚴禁誤判為刀械）。
+
+*(說明：只要在此步驟確認是上述日常商品，代表它是 100% 合法，請帶著人類的常識直接給出 false，後面的規避收網規則對其完全無效。)*
+
+---
+
+## 【第 1 步：偽裝型/隱蔽型電子煙的反規避收網（僅在第 0 步未觸發時適用）】
+如果物件**完全不屬於**上述第 0 步的常規家電、鞋子、食品、玩具，且它同時滿足以下兩大特徵，才可判定為違規（isViolating: true）：
+1. **視覺結構**：主機頂端帶有明顯供人嘴唇含住吸食的「黑色或透明扁平/圓柱狀吸嘴」。
+2. **文字鐵證（包含規避話術）**：文字明確印有【"霧化"、"本草霧化"、"草本霧化"、"霧量充足"、"零尼古丁"、"吸爽"、"煙彈"、"草本星球"、"CALM STAR"】或各式水果口味（如 Grape、Mint）字樣。
+
+---
+
+# 推理步驟 (Chain of Thought - 嚴格依序執行)
+你必須在心裡按照以下步驟進行邏輯推導，嚴禁跳步驟：
+1. **商業意圖第一識別**：客觀識別圖片中的物件。這張圖片的商品本質是什麼？
+   - （例：這是一台深藍色的 Dyson 吹風機，附帶原廠的防飛翹彎曲吹嘴與電源線）。
+2. **白名單優先攔截**：檢查它是否屬於【第 0 步：絕對合法白名單】的範疇？
+   - *如果是* $\rightarrow$ **立刻停止所有武器與煙具的特徵比對**。強制輸出安全結論：\`isViolating\`: \`false\`，\`confidence\`: \`0.0\`。
+   - *如果否* $\rightarrow$ 才允許進入【第 1 步】去檢查是否為偽裝型電子煙。
+3. **結論輸出**：
+   - 判定為安全：\`isViolating\` 為 \`false\`，\`confidence\` 必須絕對為 \`0.0\`。
+   - 判定為違規：\`isViolating\` 為 \`true\`，\`confidence\` 必須大於 \`0.9\`。
+
+# 輸出格式限制 (Response Constraint)
+請嚴格遵守系統指定的 JSON 格式輸出結構。
+`,
+      {
+        responseConstraint: {
+          type: 'object',
+          properties: {
+            product: {
+              type: 'string',
+              description: '商品圖片的主要內容物。請簡短描述看到的物件本體與品類（例如：「放置於白底的哥吉拉塑膠模型公仔」、「一枝放置於桌面上的不鏽鋼鋼筆」）。'
+            },
+            isViolating: {
+              type: 'boolean',
+              description: '【核心判定】這張圖片是否包含禁止刊登的違禁品？包含違禁品填 true；屬於安全合法商品（如玩具、生活家電、食品瓶罐）填 false。'
+            },
+            reason: {
+              type: 'string',
+              description: '陳述分析商品圖片的審查理由（繁體中文）。若判定為安全，請說明觸發了哪項【安全合法品類】的特徵；若判定為違規，請具體指出圖片中符合違禁品的專屬核心特徵。'
+            },
+            confidence: {
+              type: 'number',
+              description: '符合「違禁品」的信心指數（0.0 到 1.0）。如果 isViolating 為 false，此欄位必須強制填寫 0.0。'
+            }
+          },
+          required: ['product', 'isViolating', 'reason', 'confidence'],
+          additionalProperties: false
+        }
+      }
+    ];
+
+    picker.inert = true;
+
+    // vision
+    window.URL.revokeObjectURL(this.#data.objectURL);
+    this.#data.objectURL = window.URL.createObjectURL(blob);
+    vision.src = this.#data.objectURL;
+    vision.classList.toggle('product-vision--show', true);
+
+    // REQUEST_AI_INFERENCE
+    worker.postMessage({
+      type: 'REQUEST_AI_INFERENCE',
+      payload: {
+        id,
+        type: 'ai-illegal-product-detect',
+        config,
+        params
+      }
+    });
+
+    input.value = '';
+  }
+}
+
+const coordinator = new IdleTabAICoordinator();
+
+coordinator.connect();
+</script>
+</body>
+
+</html>

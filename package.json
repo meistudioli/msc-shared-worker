@@ -1,0 +1,23 @@
+{
+  "name": "msc-shared-worker",
+  "version": "1.0.0",
+  "description": "<msc-shared-worker /> is a Web Component built on top of the native SharedWorker API. As a UI-less component, its primary purpose is to allow developers to quickly inject and initialize a SharedWorker simply by configuring its HTML attributes.",
+  "keywords": [
+    "web"
+  ],
+  "homepage": "https://github.com/meistudioli/msc-shared-worker#readme",
+  "bugs": {
+    "url": "https://github.com/meistudioli/msc-shared-worker/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/meistudioli/msc-shared-worker.git"
+  },
+  "license": "MIT",
+  "author": "Paul Li",
+  "type": "commonjs",
+  "main": "index.html",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}
