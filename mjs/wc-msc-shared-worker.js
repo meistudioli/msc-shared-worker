@@ -79,7 +79,9 @@ export class MscSharedWorker extends HTMLElement {
   }
 
   disconnectedCallback() {
-    this.#data.controller?.abort();
+    if (this.#data?.controller) {
+      this.#data.controller.abort?.();
+    }
   }
 
   #format(attrName, oldValue, newValue) {
@@ -236,13 +238,14 @@ export class MscSharedWorker extends HTMLElement {
   #addEventsListener() {
     this.#data?.controller?.abort?.();
 
-    const { worker } = this.#data;
-    const { port } = worker ?? {};
+    const { worker } = this.#data ?? {};
+    const port = worker?.port;
+
     this.#data.controller = new AbortController();
     const signal = this.#data.controller.signal;
 
-    worker.addEventListener('error', this._onError, { signal });
-    port.addEventListener('message', this._onMessage, { signal });
+    worker?.addEventListener('error', this._onError, { signal });
+    port?.addEventListener('message', this._onMessage, { signal });
   }
 
   _onMessage(evt) {
