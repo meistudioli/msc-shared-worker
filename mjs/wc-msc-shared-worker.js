@@ -236,9 +236,9 @@ export class MscSharedWorker extends HTMLElement {
   }
 
   #addEventsListener() {
-    this.#data?.controller?.abort?.();
+    this.#data.controller?.abort?.();
 
-    const { worker } = this.#data ?? {};
+    const { worker } = this.#data;
     const port = worker?.port;
 
     this.#data.controller = new AbortController();
